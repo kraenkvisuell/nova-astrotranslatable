@@ -1,8 +1,10 @@
 <template>
-  <div class="translatable-field" ref="main">
-    <locale-tabs
+  <div class="translatable-field pt-2" ref="main" v-if="currentField.visible">
+    <LocaleTabs
       :locales="locales"
+      :attribute="field.attribute"
       :active-locale="activeLocale"
+      :display-type="currentField.translatable.display_type"
       :errors="errors"
       :error-attributes="errorAttributes"
       @tabClick="setActiveLocale"
@@ -12,25 +14,25 @@
     <div v-for="locale in locales" :key="locale.key">
       <component
         v-show="locale.key === activeLocale"
-        :is="'form-' + field.translatable.original_component"
+        :is="'form-' + currentField.translatable.original_component"
         :field="fields[locale.key]"
         :resource-name="resourceName"
         :errors="errors"
-        :class="{ 'remove-bottom-border': removeBottomBorder() }"
+        :translatable-locale="locale.key"
         :show-help-text="showHelpText"
-      ></component>
+      />
     </div>
   </div>
 </template>
 
 <script>
-import { FormField, HandlesValidationErrors } from 'laravel-nova';
+import { DependentFormField, HandlesValidationErrors } from 'laravel-nova';
 import TranslatableField from '../mixins/TranslatableField';
 import LocaleTabs from './LocaleTabs';
 
 export default {
   components: { LocaleTabs },
-  mixins: [HandlesValidationErrors, FormField, TranslatableField],
+  mixins: [HandlesValidationErrors, DependentFormField, TranslatableField],
   props: ['field', 'resourceId', 'resourceName'],
   methods: {
     setInitialValue() {
@@ -72,12 +74,12 @@ export default {
           return alert('Sorry, nova-translatable File and Image fields inside Flexible currently do not work.');
 
         const data = {};
-        const originalAttribute = this.field.translatable.original_attribute;
+        const originalAttribute = this.currentField.translatable.original_attribute;
 
         for (const locale of this.locales) {
           const tempFormData = new FormData();
           const field = this.fields[locale.key];
-          field.fill(tempFormData);
+          if (field.fill) field.fill(tempFormData);
 
           const formDataKeys = Array.from(tempFormData.keys());
           for (const rawKey of formDataKeys) {
@@ -108,10 +110,18 @@ export default {
       const locales = this.locales;
       const errorAttributes = {};
       for (const locale of locales) {
-        errorAttributes[locale.key] = `${this.field.attribute}.${locale.key}`;
+        errorAttributes[locale.key] = `${this.currentField.attribute}.${locale.key}`;
       }
       return errorAttributes;
     },
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.translatable-field:not(:last-child) {
+  .field-wrapper {
+    border-style: solid !important;
+  }
+}
+</style>

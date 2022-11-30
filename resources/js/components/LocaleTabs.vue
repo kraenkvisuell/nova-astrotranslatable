@@ -1,14 +1,18 @@
 <template>
-  <div v-show="sortedLocales.length > 1" class="flex select-none" :class="wrapperClasses">
-    <div class="ml-auto">
+  <div
+    v-show="locales.length > 1"
+    class="nova-translatable-locale-tabs flex select-none"
+    :class="{ 'px-8': !this.detail }"
+  >
+    <div class="ml-auto" :class="listClasses" v-if="displayType != 'none'">
       <a
-        v-for="locale in sortedLocales"
+        v-for="locale in locales"
         :key="locale.key"
-        :dusk="errorAttributes[locale.key] + '.locale.tab'"
-        class="ml-3 cursor-pointer font-bold text-80 text-sm"
+        :dusk="getDuskKey(locale.key)"
+        class="locale-tag ml-3 cursor-pointer font-bold text-80 text-sm"
         :class="{
-          'text-primary border-b-2 border-primary': locale.key === activeLocale,
-          'text-danger border-danger': hasError(locale.key),
+          '-active': locale.key === activeLocale,
+          '-error': hasError(locale.key),
         }"
         @click="() => $emit('tabClick', locale.key)"
         @dblclick="() => $emit('doubleClick', locale.key)"
@@ -21,25 +25,69 @@
 
 <script>
 export default {
-  props: ['locales', 'activeLocale', 'detail', 'errors', 'errorAttributes'],
+  props: [
+    'attribute',
+    'locales',
+    'activeLocale',
+    'displayType',
+    'detail',
+    'errors',
+    'errorAttributes',
+    'localesWithErrors',
+  ],
   computed: {
-    wrapperClasses() {
-      if (this.detail) return ['pt-4'];
-      return ['pt-4', 'px-8'];
-    },
-
-    sortedLocales() {
-      const novaLocale = _.find(this.locales, ['key', Nova.config.locale]);
-      if (!novaLocale) return this.locales;
-      return [novaLocale, ...this.locales.filter(({ key }) => key !== Nova.config.locale)];
+    listClasses() {
+      if (this.displayType === 'column') return ['flex', 'flex-col'];
+      return [];
     },
   },
+
   methods: {
     hasError(locale) {
+      if (Array.isArray(this.localesWithErrors) && this.localesWithErrors.includes(locale)) return true;
       if (!this.errors || !this.errorAttributes) return false;
+
       const errorAttribute = this.errorAttributes[locale];
       return this.errors.has(errorAttribute);
+    },
+
+    getDuskKey(locale) {
+      if (this.attribute) {
+        return `${this.attribute}.${locale}.locale.tab`;
+      }
+
+      if (this.errorAttributes && this.errorAttributes[locale]) {
+        return `${this.errorAttributes[locale]}.locale.tab`;
+      }
+
+      return locale + '.locale.tab';
     },
   },
 };
 </script>
+
+<style lang="scss">
+.nova-translatable-locale-tabs {
+  position: relative;
+  z-index: 2;
+  padding-top: 0.25rem;
+
+  .locale-tag {
+    border-bottom: 2px solid transparent;
+
+    &.-active {
+      color: rgba(var(--colors-primary-500));
+      border-color: rgba(var(--colors-primary-500));
+    }
+
+    &.-error {
+      color: rgba(var(--colors-red-500));
+      border-color: rgba(var(--colors-red-500));
+
+      &.-active {
+        color: rgba(var(--colors-primary-500));
+      }
+    }
+  }
+}
+</style>
