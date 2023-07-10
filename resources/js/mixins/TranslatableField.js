@@ -28,6 +28,8 @@ export default {
 
     // Listen to setAllLocale event
     Nova.$on('nova-translatable@setAllLocale', this.setActiveLocale);
+
+
   },
 
   mounted() {

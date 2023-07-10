@@ -32,6 +32,20 @@ export default {
   components: { LocaleTabs },
   mixins: [HandlesValidationErrors, FormField, TranslatableField],
   props: ['field', 'resourceId', 'resourceName'],
+  watch: {
+    errors(newErrors, oldErrors) {
+
+      let localeIsSet = false;
+      _.each(newErrors, (error) => {
+        _.each(error, (messages, key) => {
+          if (!localeIsSet && _.startsWith(key, this.field.attribute+'.')) {
+            this.activeLocale = key.substring(key.indexOf('.')+1);
+            localeIsSet = true;
+          }
+        });
+      });
+    }
+  },
   methods: {
     setInitialValue() {
       // Do nothing
